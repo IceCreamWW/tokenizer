@@ -1,0 +1,76 @@
+\documentclass[titlepage]{article}
+\usepackage{xeCJK}
+\usepackage[top=1in, bottom=1.25in, left=1.25in, right=1.25in,includefoot,heightrounded]{geometry}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{graphicx}
+\usepackage{tocbibind}
+
+\renewcommand\refname{参考文献}
+
+\begin{document}
+\title{统计自然语言处理基础 \\ 项目报告}
+\date{August, 17th 2018}
+\author{王巍 \\ \\班号: 1503103 \\ 学号: 1150340114}
+\maketitle
+
+\section{分词任务}
+\subsection{定义}
+中文分词指的是将一个汉字序列切分成一个个单独的词。分词就是将连续的字序列按照一定的规范重新组合成词序列的过程。\cite{definition}
+\subsection{实例}
+\begin{itemize}
+\item 例如一个较为简单的分词任务:
+\begin{center}
+我国律师工作是随着改革开放和民主法制建设的加强而建立和发展起来的。
+\end{center}
+
+\noindent 的分词结果为:
+\begin{center}
+我国/律师/工作/是/随着/改革/开放/和/民主/法制/建设/的/加强/而/建立/和/发展/起来/的/。\\[2em]
+\end{center}
+
+\item 再例如一个由于中文的特性,很可能会被错误分词的例子:
+\begin{center}
+请把手拿开
+\end{center}
+
+\noindent 的分词结果为:
+\begin{center}
+请把/手/拿开
+\end{center}
+
+\noindent 但由于``把手''本身也组成词, 因此也有可能形成错误的分词:
+\begin{center}
+请/把手/拿开
+\end{center}
+
+\item 初次之外,还存在本身具有歧义的句子,比如:
+\begin{center}
+乒乓球拍卖完了
+\end{center}
+
+``乒乓球/拍卖'' 以及`` 乒乓/球拍/卖'' 都是从语法上合理的分词,但语义上的合理性有所不同.
+\end{itemize}
+
+\subsection{常用方法}
+\begin{itemize}
+\item 基于字典匹配的方法\\[1em]
+  基于字典匹配的方法又称为机械分词法, 根据扫描的方向和不同长度的匹配情况,可以分为正向最大匹配法,逆向最大匹配法,最少切分以及双向最大匹配法, 在本次项目中, 使用正向最大匹配法结合规则取得了较好的效果, 算法的细节将在下一节讨论.
+\item 基于句法的分词方法\\[1em]
+  基于句法的分词方法使用计算机模拟人对句子的理解,达到识别词的效果,配合句法语义系统使用. 对于句子本身从语法上没有歧义, 但因为构词而容易产生错误切分的句子,基于句法的分词方法能够较好的解决这种问题. 如上一小节中的第二个例子, 错误的分词方法在语法上存在错误. 但是, 中文的句子构成十分复杂, 句法分析通常难以做到较高的准确率.
+\item 基于统计的分词方法\\[1em]
+  基于统计的分词方法包括HMM, CRF等, 这类方法将分词视为分类问题, 考察一个字的有限上下文根据统计概率确定其标签, 并通过标签解码出分词结果. 在消除歧义方面, n-gram方法可以在一定程度上解决句子的固有歧义. 如上一小节中的第三个例子, ``乒乓球/拍卖'' 的分词方式出现的频率显然低于`` 乒乓/球拍/卖''的分词方式, 通过这种方法可以选出更为合理的分词. \\
+  本次项目中也实现了基于HMM算法的分词, 在没有结合字典,规则, 且训练预料较小的情况下, HMM算法的表现不算很好, 算法的细节也将在下一节中讨论.
+
+\end{itemize}
+
+
+\section{算法}
+\begin{thebibliography}{1}
+
+    \bibitem{definition} https://baike.baidu.com/ 中文分词
+    
+    \bibitem{momentum} I. Sutskever, J. Martens, G. E. Dahl, and G. E. Hinton. \textit{On the importance of initialization and momentum in deep learning.} In S. Dasgupta and D. Mcallester, editors, Proceedings of the 30th International Conference on Machine Learning (ICML-13), volume 28, pages 1139–1147. JMLR Workshop and Conference Proceedings, May 2013.
+
+\end{thebibliography}
+\end{document}
