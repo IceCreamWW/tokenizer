@@ -245,5 +245,5 @@ def test_all(corpus):
 
 if __name__ == "__main__":
     # test_sentence('淘宝网上的真皮卡包男式卡包牛皮男式卡包价格：￥138.00元，挺不错的，分享给大家，http://t.cn/a3S0o8')
-    test_all('dev2')
+    test_all('dev1')
 

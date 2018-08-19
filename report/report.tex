@@ -11,7 +11,7 @@
 \usepackage{float}
 
 \renewcommand\refname{参考文献}
-\def\NoNumber#1{{\def\alglinenumber##1{}\State #1}\addtocounter{ALG@line}{-1}}
+\def\NoNumber\#1{{\def\alglinenumber\#\#1{}\State \#1}\addtocounter{ALG@line}{-1}}
 
 \begin{document}
 \title{统计自然语言处理基础 \\ 项目报告}
@@ -212,6 +212,33 @@ $$
 $$
 f_1 = \frac{2 * Precision * Recall}{Precision + Recall}
 $$
+\subsection{准确率}
+\subsubsection{MMSEG}
+\begin{itemize}
+    \item 开发语料1:\\[1em]
+        \#recall 24573\\
+        \#gold 26853\\
+        \#predict 28650\\
+        f: 0.884168423328
+    \item 开发语料2:\\[1em]
+        \#recall 6328\\
+        \#gold 7402\\
+        \#predict 8186\\
+        f: 0.811906594817
+\end{itemize}
+\subsubsection{HMM}
+\begin{itemize}
+    \item 开发语料1:\\[1em]
+        \#recall 21520\\
+        \#gold 26853\\
+        \#predict 27029\\
+        f: 0.798782524776
+    \item 开发语料2:\\[1em]
+        \#recall 5066\\
+        \#gold 7402\\
+        \#predict 6962\\
+        f: 0.70537454748
+\end{itemize}
 \begin{thebibliography}{1}
 
     \bibitem{definition} https://baike.baidu.com/ 中文分词
