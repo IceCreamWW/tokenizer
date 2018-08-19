@@ -270,4 +270,4 @@ def test_all(corpus):
 
 if __name__ == "__main__":
     # test_sentence('他深知书中甘苦，一往情深地说，多出好书，少出平庸书，严查违禁书，为改革开放营造健康向上的文化舆论环境，是新闻出版工作者肩负的神圣使命！')
-    test_all('dev1')
+    test_all('dev2')
