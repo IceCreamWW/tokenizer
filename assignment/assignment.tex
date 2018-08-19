@@ -4,13 +4,46 @@
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{graphicx}
-\usepackage{tocbibind}
 \usepackage{enumitem}
-\usepackage{algorithm}
-\usepackage{algorithmic}
-\usepackage{float}
-
+\DeclareMathOperator*{\argmax}{argmax}
 
 \begin{document}
+\noindent 已知六面骰子, 投若干次, 六个面出现次数分别为$k_1, k_2, k_3, k_4, k_5, k_6$, 用最大似然估计推到每面出现的概率.\\[2em]
 
+\noindent 多次投骰子符合多项分布, 令$n=\sum_{i=1}^6 k_i$, 模型的参数为$\theta=(\theta_1, \theta_2, \theta_3, \theta_4, \theta_5, \theta_6)$, 其概率质量函数为:
+$$
+P(X_1=k_1, X_2=k_2, \ldots, X_6=k_6) = \frac{n!}{\prod\limits_{i=1}^6 k_i!} \prod_{i=1}^6 \theta_i^{k_i}
+$$
+\noindent 则最大似然估计, 有:
+\begin{flalign*}
+    {\hat_{\theta}}_{MLE} &= \argmax_{\theta} \frac{n!}{\prod\limits_{i=1}^6 k_i!} \prod_{i=1}^6 \theta_i^{k_i} \\
+                          &= \argmax_{\theta} \log \frac{n!}{\prod\limits_{i=1}^6 k_i!} + \sum_{i=1}^6 k_i \log \theta_i \\
+                          &= \argmax_{\theta} \sum_{i=1}^6 k_i \log \theta_i
+\end{flalign*}
+同时存在约束条件:
+$$
+\sum_{i=1}^6 \theta_i - 1 = 0
+$$
+用拉格朗日乘数法求最值, 构造拉格朗日函数:
+$$
+f(\theta_1, \theta_2, \ldots, \theta_6) = \sum_{i=1}^6 k_i \log \theta_i + \lambda(\sum_{i=1}^6 \theta_i - 1)
+$$
+$f$对各变量的偏导数为0, 有:
+$$
+\left\{\begin{matrix}
+        \frac{k_i}{\theta_i} + \lambda = 0 (1 \leq i \leq 6)        \\ 
+        \sum_{i=1}^6 \theta_i - 1 = 0
+\end{matrix}\right.
+$$
+得:
+$$
+\left\{\begin{matrix}
+        \theta_i = -\frac{k_i}{\lambda} (1 \leq i \leq 6)        \\ 
+        \lambda = -n
+\end{matrix}\right.
+$$
+因此,结果为:
+$$
+{\hat_{\theta}}_{MLE} = (\frac{k_1}{\sum_{i=1}^6 k_i}, \frac{k_2}{\sum_{i=1}^6 k_i}, \frac{k_3}{\sum_{i=1}^6 k_i}, \frac{k_4}{\sum_{i=1}^6 k_i}, \frac{k_5}{\sum_{i=1}^6 k_i}, \frac{k_6}{\sum_{i=1}^6 k_i})
+$$
 \end{document}
