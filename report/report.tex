@@ -130,7 +130,9 @@
     根据本条规则,显然单字``和''的频率要大于单字``务''的频率, 因此选择第二种方案
 \end{itemize}
 
-\noindent 此外, 在实际应用中, 数字和url等的切分需要通过规则来加以约束,具体方案是对数字和url分别用占位符替换, 并备份原数字和url, 在分词结束后进行还原.
+\noindent 此外, 在实际应用中, 数字和url等的切分需要通过规则来加以约束,具体方案是对数字和url分别用占位符替换, 并备份原数字和url, 在分词结束后进行还原.\\[1em] 
+
+\noindent 基于字典匹配的方法无法正确地识别新词,因此对训练语料或词典的大小有一定的要求,在实验时,也发现随着词典数量的增加,算法在开发集上的准确率会逐步提高, 但使用多个来源不同的词典时, 单词对应的频率将失去意义.
 
 \newpage
 \subsubsection{算法伪代码}
@@ -145,7 +147,7 @@
         \STATE words $\leftarrow$ empty list
         \STATE cursor $\leftarrow$ 0
         \REPEAT
-        \STATE chunks $\leftarrow$ Get-Chunk(sentence start from cursor)
+        \STATE chunks $\leftarrow$ Get-Chunk(sentence[cursor:])
         \IF{chunks.length > 1}
         \STATE chunks $\leftarrow$ chunk with max total length \COMMENT{rule 1}
         \ENDIF
@@ -165,7 +167,9 @@
         \STATE cursor $\leftarrow$ cursor + chunks[0].length
         \STATE add chunk to words
         \UNTIL{cursor == length of sentence}
-        \RETURN words joined by delimiters
+        \STATE result $\leftarrow$ word joined by delimiters
+        \STATE restore digits and urls with backups
+        RETURN result
     \end{algorithmic}
 \end{algorithm}
 
@@ -190,6 +194,49 @@
 
 \subsection{隐马尔科夫模型(HMM)}
 
+\subsubsection{形式化定义}
+已知观察序列$Y = (Y_1, Y_2, \cdots, Y_n)$和模型$\theta$, 求解隐藏状态$X = (X_1, X_2, \cdots, X_n)$, 最大化条件概率$P(Y \mathrel| X, \theta)$, 并根绝隐藏状态序列$X$解码得到分词结果.
+\subsubsection{建模方法}
+HMM模型的参数是一五元组$<StatusSet, ObservedSet, TransProbMatrix, EmitProbMatrix, InitStatus>$组成的, 其中:
+\begin{itemize}
+    \item StatusSet: 状态值集合,在分词任务中,有四种状态B,M,E,S, 分别表示起始字,中间字,结束字,单字成词.
+    \item ObservedSet: 观察值集合,即在训练过程中或预定义的词典中的所有字 
+    \item TransProbMatrix: 转移概率矩阵, 马尔科夫链的特点是在$T=i$时刻的状态Status(i),只和$T=i$之前的n个状态有关,HMM中假设n=1, 因此在这里状态转移矩阵是一个4*4的矩阵,分别对应前一个状态的BMES到下一个状态的BMES的转移概率.
+    \item EmitProbMatrix: 发射概率矩阵, 发射概率是一个条件概率, 对观察值i和状态j, 发射概率表示为$P(Observed[i]\mathrel|Status[j])$, 由观察值独立性假设, 有:
+$$
+P(Observed[i], Status[j]) = P(Status[j]) * P(Observed[i]\mathrel|Status[j])
+$$
+    \item InitStatus: 初始状态分布, 即各个作为第一个字出现的概率分布, 显然, 状态M和S的初始概率为0
+\end{itemize}
+HMM模型求解中文分词问题的核心在于求解隐藏状态序列的Viterbi\cite{viterbi}算法, 该算法通过动态规划的方式求解状态转移图上概率最大的路径.
+
+\includegraphics[width=0.8\textwidth]{viterbi.png}
+
+\newpage
+\subsubsection{算法伪代码}
+训练HMM模型的过程虽然代码冗长,但实际上只是简单的对训练语料的概率统计的过程,因此在算法部分,主要说明Viterbi算法的伪代码
+
+\begin{algorithm}[H]
+    \renewcommand{\thealgorithm}{}
+    \caption{Viterbi(obs)}
+    \begin{algorithmic}[1]
+        \STATE probs $\leftarrow$ empty list of dictionary
+        \STATE path $\leftarrow$ emtpy dictionary
+        \FOR{state in StatusSet} 
+        \STATE probs[0][state] $\leftarrow$ $P(state\mathrel|obs[0])$
+        \STATE add state to path
+        \ENDFOR
+        \FOR{$i=1$ to $obs.length$}
+        \STATE new-path $\leftarrow$ empty list of dictionary
+        \FOR{state in StatusSet}
+        \STATE from-state $\leftarrow$ $argmax_{state}$ $P(prev-state) * P(state\mathrel|prev-state) * P(obs[i]\mathrel|state)$
+        \STATE new-path $\leftarrow$ path[from-state] concat state
+        \ENDFOR
+        \STATE update path with new-path
+        \ENDFOR
+        \RETURN path with largest probs
+    \end{algorithmic}
+\end{algorithm}
 \section{实验结果}
 \subsection{数据规模}
 \begin{itemize}
@@ -245,7 +292,7 @@ $$
 
     \bibitem{MMSEG} Chih-Hao Tsai \textit{A Word Identification System for Mandarin Chinese Text Based on Two Variants of the Maximum Matching Algorithm} http://technology.chtsai.org/mmseg/ 
 
-    \bibitem{momentum} I. Sutskever, J. Martens, G. E. Dahl, and G. E. Hinton. \textit{On the importance of initialization and momentum in deep learning.} In S. Dasgupta and D. Mcallester, editors, Proceedings of the 30th International Conference on Machine Learning (ICML-13), volume 28, pages 1139–1147. JMLR Workshop and Conference Proceedings, May 2013.
+    \bibitem{viterbi} P.Antal \textit{Hidden Markov Models} antal@mit.bme.hu
 
 \end{thebibliography}
 \end{document}

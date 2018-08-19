@@ -13,7 +13,7 @@ class Tokenizer:
     url_pattern = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
     url_placeholder = '燚'
 
-    def __init__(self, train_path='./data/train.txt', model_path='./model/hmm-trained.json', use_exist=True):
+    def __init__(self, train_path='./data/train.txt', model_path='./model/hmm.json', use_exist=True):
 
         self.states = None          # 状态值集合
         self.pi = None              # 初始状态分布
