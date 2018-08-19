@@ -1,12 +1,17 @@
 \documentclass[titlepage]{article}
 \usepackage{xeCJK}
-\usepackage[top=1in, bottom=1.25in, left=1.25in, right=1.25in,includefoot,heightrounded]{geometry}
+\usepackage[top=1.2in, bottom=1.3in, left=1in, right=1in,heightrounded]{geometry}
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{graphicx}
 \usepackage{tocbibind}
+\usepackage{enumitem}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{float}
 
 \renewcommand\refname{参考文献}
+\def\NoNumber#1{{\def\alglinenumber##1{}\State #1}\addtocounter{ALG@line}{-1}}
 
 \begin{document}
 \title{统计自然语言处理基础 \\ 项目报告}
@@ -44,7 +49,7 @@
 请/把手/拿开
 \end{center}
 
-\item 初次之外,还存在本身具有歧义的句子,比如:
+\item 除此之外,还存在本身具有歧义的句子,比如:
 \begin{center}
 乒乓球拍卖完了
 \end{center}
@@ -59,17 +64,160 @@
 \item 基于句法的分词方法\\[1em]
   基于句法的分词方法使用计算机模拟人对句子的理解,达到识别词的效果,配合句法语义系统使用. 对于句子本身从语法上没有歧义, 但因为构词而容易产生错误切分的句子,基于句法的分词方法能够较好的解决这种问题. 如上一小节中的第二个例子, 错误的分词方法在语法上存在错误. 但是, 中文的句子构成十分复杂, 句法分析通常难以做到较高的准确率.
 \item 基于统计的分词方法\\[1em]
-  基于统计的分词方法包括HMM, CRF等, 这类方法将分词视为分类问题, 考察一个字的有限上下文根据统计概率确定其标签, 并通过标签解码出分词结果. 在消除歧义方面, n-gram方法可以在一定程度上解决句子的固有歧义. 如上一小节中的第三个例子, ``乒乓球/拍卖'' 的分词方式出现的频率显然低于`` 乒乓/球拍/卖''的分词方式, 通过这种方法可以选出更为合理的分词. \\
-  本次项目中也实现了基于HMM算法的分词, 在没有结合字典,规则, 且训练预料较小的情况下, HMM算法的表现不算很好, 算法的细节也将在下一节中讨论.
+    基于统计的分词方法包括HMM, CRF等, 这类方法将分词视为分类问题, 考察一个字的有限上下文根据统计概率确定其标签, 并通过标签解码出分词结果. 在消除歧义方面, n-gram方法可以在一定程度上解决句子的固有歧义. 如上一小节中的第三个例子, ``乒乓球/拍卖'' 的分词方式出现的频率显然低于`` 乒乓/球拍/卖''的分词方式, 通过这种方法可以选出更为合理的分词. \\
+
+  本次项目中也实现了基于HMM算法的分词, 在没有结合字典,规则, 且训练语料较小的情况下, HMM算法的表现不算很好, 算法的细节也将在下一节中讨论.
 
 \end{itemize}
 
 
 \section{算法}
+\subsection{最大正向匹配算法 (MMSEG)}
+\subsubsection{形式化定义}
+给定词典$D(w, f)$ ($w$是单词文本, $f$是单词频率). 对于汉字序列$S$, 在$D$上找到所有可能的词块序列$C_{1,2\cdots,n}$ ($C_i=w_1[\_w_2[\_w_3]]$, w是D中的单词). 使得对于算法的词块评分函数$P$, 词块序列的评分之和$\sum_{i=1}^n P(C_i)$之和最大的词块$C_{1,2\cdots,n}^{\max}$即为算法的输出分词方案.
+\subsubsection{建模方法}
+最大正向匹配算法 (MMSEG)是基于字典匹配的分词方法, 简单高效, 在一定程度上能够解决纯词典方案无法解决的分词歧义问题.\\
+
+\noindent MMSEG算法分为简单算法和复杂算法,其中简单算法对于一个句子,找到其所有的可能前缀; 而复杂算法对于一个句子,前向寻找其可能的``词块'', 即三个或以下个词组, 对可能的词组应用四个启发式规则来解决分歧, 这四个规则即是算法中的词块评分函数,分别是:
+
+\begin{itemize}
+\item  备选词块的长度最大:\\[1em]
+    例如``长春市长春药店''的分词方案有:
+    \begin{itemize}[label=\tiny$\bullet$]
+        \item 长春市\_长春\_药店\_
+        \item 长春市\_长\_春药\_
+        \item 长春\_市长\_春药\_
+        \item 长春\_市\_长春\_
+        \item 长\_春\_市长\_
+    \end{itemize}
+    第一种组合长度最长,因此采用第一种分词方案.
+\item 备选词组合的平均词长最大:\\[1em]
+    例如``国际化''的分词方案有:
+    \begin{itemize}
+        \item 国际化\_
+        \item 国际\_化\_
+        \item 国\_际\_化\_
+    \end{itemize}
+    使用规则1无法过滤,但第一种分词方案的平均长度3为最大, 因此采用第一种分词方案.
+
+\item 备选词组合的变化最小\\[1em]
+    例如``北京大学生''的分词方案有:
+    \begin{itemize}
+        \item 北京大学\_生\_
+        \item 北京\_大学生
+        \item 北京\_大学\_生\_
+        \item 北京\_大\_学生\_
+        \item 北\_京\_大学生\_
+    \end{itemize}
+    经过前两条规则过滤,剩余:
+    \begin{itemize}
+        \item 北京大学\_生\_
+        \item 北京\_大学生
+    \end{itemize}
+    本条规则在应用中以方差作为度量, 第一种方案方差为1.5, 第二种为0.5. 因此选择第二种方案
+\item 备选词组合中，单字词的出现频率统计值最高:
+    例如``设施和服务''的分词方案有:
+    \begin{itemize}
+        \item 设施\_和服\_务\_
+        \item 设施\_和\_服务\_
+        \item 设\_施\_和服\_
+    \end{itemize}
+    经前面规则过滤得:
+    \begin{itemize}
+        \item 设施\_和服\_务\_
+        \item 设施\_和\_服务\_
+    \end{itemize}
+    根据本条规则,显然单字``和''的频率要大于单字``务''的频率, 因此选择第二种方案
+\end{itemize}
+
+\noindent 此外, 在实际应用中, 数字和url等的切分需要通过规则来加以约束,具体方案是对数字和url分别用占位符替换, 并备份原数字和url, 在分词结束后进行还原.
+
+\newpage
+\subsubsection{算法伪代码}
+
+\begin{algorithm}
+    \renewcommand{\thealgorithm}{}
+    \caption{MMSEG-Tokenizer(sentence, dictionary)}
+    \begin{algorithmic}[1]
+        \REQUIRE chunk has structure with properties corresponding to measurements of 4 rules
+        \STATE backups $\leftarrow$ special patterns in sentence
+        \STATE replace special patterns in sentence with placeholder
+        \STATE words $\leftarrow$ empty list
+        \STATE cursor $\leftarrow$ 0
+        \REPEAT
+        \STATE chunks $\leftarrow$ Get-Chunk(sentence start from cursor)
+        \IF{chunks.length > 1}
+        \STATE chunks $\leftarrow$ chunk with max total length \COMMENT{rule 1}
+        \ENDIF
+        \IF{chunks.length > 1}
+        \STATE chunks $\leftarrow$ chunk with max average length \COMMENT{rule 2}
+        \ENDIF
+        \IF{chunks.length > 1}
+        \STATE chunks $\leftarrow$ chunk with min standard deviation \COMMENT{rule 3}
+        \ENDIF
+        \IF{chunks.length > 1}
+        \STATE chunks $\leftarrow$ chunk with max single word frequency \COMMENT{rule 4}
+        \ENDIF
+        \IF{chunks.length > 1}
+        \STATE chunks $\leftarrow$ random chunk in chunk \COMMENT{ambiguity cannot be resolved}
+        \ENDIF
+        
+        \STATE cursor $\leftarrow$ cursor + chunks[0].length
+        \STATE add chunk to words
+        \UNTIL{cursor == length of sentence}
+        \RETURN words joined by delimiters
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+    \renewcommand{\thealgorithm}{}
+    \caption{Get-Chunk(sentence)}
+    \begin{algorithmic}[1]
+        \REQUIRE prefix trie already built from dictionary or corpus
+        \STATE chunks $\leftarrow$ empty list
+        \FOR{$word_1$ in prefixes of sentence}
+        \STATE append chunk($word_1$) to chunks
+        \FOR{$word_2$ in prefixes of sentence[$word_1.length$:]}
+        \STATE append chunk($word_1$, $word_2$) to chunks
+        \FOR{$word_3$ in prefixes of sentence[$word_1.length + word_2.length$:]}
+        \STATE append chunk($word_1$, $word_2$, $word_3$) to chunks
+        \ENDFOR
+        \ENDFOR
+        \ENDFOR
+        \RETURN chunks
+    \end{algorithmic}
+\end{algorithm}
+
+\subsection{隐马尔科夫模型(HMM)}
+
+\section{实验结果}
+\subsection{数据规模}
+\begin{itemize}
+    \item 训练数据:\\[1em]
+        使用ir.hit.edu.cn提供的训练语料, 包含7000行, 185815个词, 20941个不重复的词, 此外MMSEG方法使用清华大学开发语料库``诗词'',``成语'',``地名''词库作为补充.\\
+    \item 测试数据:\\[1em]
+        使用ir.hit.edu.cn提供的开发语料, 其中语料1包含1000行, 26853个词, 6889个不重复的词; 语料2包含201行, 7402个词, 2392个不重复的词.
+\end{itemize}
+\subsection{评价方法}
+评价方法使用ir.hit.edu.cn提供的eval.py, 使用权重相等的准确率和召回率的综合性能指标 $F1-measure$
+其中准确率Precision:
+$$
+Precision = \frac{\texttt{正确切分的词数}}{\texttt{切分出词的总数}}
+$$
+召回率Recall:
+$$
+Recall = \frac{\texttt{正确切分的词数}}{\texttt{应切分出词的总数}}
+$$
+评价指标:
+$$
+f_1 = \frac{2 * Precision * Recall}{Precision + Recall}
+$$
 \begin{thebibliography}{1}
 
     \bibitem{definition} https://baike.baidu.com/ 中文分词
-    
+
+    \bibitem{MMSEG} Chih-Hao Tsai \textit{A Word Identification System for Mandarin Chinese Text Based on Two Variants of the Maximum Matching Algorithm} http://technology.chtsai.org/mmseg/ 
+
     \bibitem{momentum} I. Sutskever, J. Martens, G. E. Dahl, and G. E. Hinton. \textit{On the importance of initialization and momentum in deep learning.} In S. Dasgupta and D. Mcallester, editors, Proceedings of the 30th International Conference on Machine Learning (ICML-13), volume 28, pages 1139–1147. JMLR Workshop and Conference Proceedings, May 2013.
 
 \end{thebibliography}

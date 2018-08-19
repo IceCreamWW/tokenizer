@@ -49,12 +49,16 @@ class Tokenizer:
     url_placeholder = '燚'
     punctuations = set()
 
-    def __init__(self, train_source='./data/train.txt', use_exist=True):
+    def __init__(self, train_source='./data/train.txt', use_exist=True, complement_dicts='./data/dicts'):
         self.vocabulary = trie.CharTrie()
         self.all_punctuations = None
         self.max_word_frequency = 0
         self.__build_punctuations(path_source='./data/punctuations.txt')
         self.__build_vocabulary(path_source=train_source, use_exist=use_exist)
+
+        # 加载外部词典
+        for dict_path in os.listdir(complement_dicts):
+            self.__load_dict(os.path.join(complement_dicts, dict_path))
 
         if len(Tokenizer.punctuations) == 0:
             Tokenizer.punctuations = set(self.all_punctuations)
@@ -184,6 +188,7 @@ class Tokenizer:
                 self.vocabulary, self.max_word_frequency = pickle.load(fp)
 
         else:
+            print("正在训练MMSEG模型")
             if path_source.endswith('.dic') or path_source.endswith('.dict'):
                 self.__build_vocabulary_from_dict(path_source)
             else:
@@ -210,7 +215,6 @@ class Tokenizer:
                     if word in self.all_punctuations:
                         if word not in self.punctuations:
                             self.punctuations.add(word)
-                            break
 
                     if word not in self.vocabulary:
                         self.vocabulary[word] = Word(word)
@@ -224,6 +228,16 @@ class Tokenizer:
             for word in self.vocabulary.iteritems(prefix=Tokenizer.digits_placeholder):
                 word[1].frequency = self.max_word_frequency * 2
             self.vocabulary[Tokenizer.digits_placeholder].frequency = self.max_word_frequency
+
+    def __load_dict(self, dict_path):
+        with open(dict_path, 'r', encoding='u8') as fp:
+            lines = [line for line in fp.read().split('\n') if len(line) != 0]
+            for _, line in enumerate(lines):
+                word, freq = line.split('\t')
+                word = word.strip()
+                freq = freq.strip()
+                self.vocabulary[word] = Word(word)
+                self.vocabulary[word].frequency = int(freq)
 
 
 def test_sentence(sentence):
@@ -255,5 +269,5 @@ def test_all(corpus):
 
 
 if __name__ == "__main__":
-    test_sentence('我国律师工作是随着改革开放和民主法制建设的加强而建立和发展起来的。')
-    # test_all('test2')
+    # test_sentence('他深知书中甘苦，一往情深地说，多出好书，少出平庸书，严查违禁书，为改革开放营造健康向上的文化舆论环境，是新闻出版工作者肩负的神圣使命！')
+    test_all('dev1')
